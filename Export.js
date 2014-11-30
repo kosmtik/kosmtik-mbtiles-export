@@ -21,15 +21,23 @@ TilesExporter.prototype.export = function (callback) {
     this.log('Starting MBTiles export, with bounds', bounds, 'and from zoom', this.options.minZoom, 'to', this.options.maxZoom);
     new MBTiles(this.options.output, function (err, mbtiles) {
         if (err) throw err;
-        var mapPool = self.project.createMapPool();
-        for (var i = self.options.minZoom; i <= self.options.maxZoom; i++) {
-            self.processZoom(i, bounds, mapPool, mbtiles, self.project);
+        var done = 0,
+            commit = function (err) {
+            if (err) throw err;
+            if (++done === (self.options.maxZoom - self.options.minZoom + 1)) mbtiles.stopWriting(function (err) {if (err) throw err;});
         }
+        mbtiles.startWriting(function (err) {
+            if (err) throw err;
+            var mapPool = self.project.createMapPool();
+            for (var i = self.options.minZoom; i <= self.options.maxZoom; i++) {
+                self.processZoom(i, bounds, mapPool, mbtiles, self.project, commit);
+            }
+        });
         // Should we drain mapPool even if we are in a script?
     });
 };
 
-TilesExporter.prototype.processZoom = function (zoom, bounds, mapPool, mbtiles, project) {
+TilesExporter.prototype.processZoom = function (zoom, bounds, mapPool, mbtiles, project, cb) {
     var leftTop = zoomLatLngToXY(zoom, bounds[3], bounds[0]),
         rightBottom = zoomLatLngToXY(zoom, bounds[1], bounds[2]),
         self = this, done = 0;
@@ -37,19 +45,14 @@ TilesExporter.prototype.processZoom = function (zoom, bounds, mapPool, mbtiles, 
     var count = (rightBottom[0] - leftTop[0] + 1) * (rightBottom[1] - leftTop[1] + 1);
     this.log(count, 'tiles to process');
     var commit = function (err) {
-        if (err) throw err;
-        if(++done === count) {
-            mbtiles.stopWriting(function (err) {if (err) throw err;});
-        }
+        if (err) cb(err);
+        if(++done === count) cb();
     };
-    mbtiles.startWriting(function (err) {
-        if (err) throw err;
-        for (var x = leftTop[0]; x <= rightBottom[0]; x++) {
-            for (var y = leftTop[1]; y <= rightBottom[1]; y++) {
-                self.processTile(zoom, x, y, mapPool, mbtiles, project, commit);
-            }
+    for (var x = leftTop[0]; x <= rightBottom[0]; x++) {
+        for (var y = leftTop[1]; y <= rightBottom[1]; y++) {
+            self.processTile(zoom, x, y, mapPool, mbtiles, project, commit);
         }
-    });
+    }
 };
 
 TilesExporter.prototype.processTile = function (zoom, x, y, mapPool, mbtiles, project, cb) {

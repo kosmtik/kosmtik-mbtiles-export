@@ -1,6 +1,6 @@
 {
   "name": "kosmtik-mbtiles-export",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Export your Kosmtik project in MBTiles",
   "main": "index.js",
   "scripts": {
