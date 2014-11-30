@@ -55,7 +55,7 @@ TilesExporter.prototype.processZoom = function (zoom, bounds, mapPool, mbtiles, 
 TilesExporter.prototype.processTile = function (zoom, x, y, mapPool, mbtiles, project, cb) {
     mapPool.acquire(function (err, map) {
         if (err) throw err;
-        var tile = new MetatileBasedTile(zoom, x, y, {size: project.mml.metatile});
+        var tile = new MetatileBasedTile(zoom, x, y, {metatile: project.mml.metatile});
         return tile.render(project, map, function (err, im) {
             if (err) throw err;
             im.encode('png', function (err, buffer) {
