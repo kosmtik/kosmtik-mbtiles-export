@@ -19,21 +19,34 @@ TilesExporter.prototype.export = function (callback) {
     this.log('Starting MBTiles export to', this.options.output);
     if (this.options.minZoom > this.options.maxZoom) return this.log('Invalid zooms');
     this.log('Starting MBTiles export, with bounds', bounds, 'and from zoom', this.options.minZoom, 'to', this.options.maxZoom);
+    var metadata = {
+        name: this.project.id,
+        type: 'baselayer',
+        version: '1.0.0',
+        description: this.project.mml.description || '',
+        format: 'png',
+        bounds: bounds,
+        minzoom: this.options.minZoom,
+        maxzoom: this.options.maxZoom
+    }
     new MBTiles(this.options.output, function (err, mbtiles) {
         if (err) throw err;
         var done = 0,
             commit = function (err) {
-            if (err) throw err;
-            if (++done === (self.options.maxZoom - self.options.minZoom + 1)) mbtiles.stopWriting(function (err) {if (err) throw err;});
-        }
+                if (err) throw err;
+                if (++done === (self.options.maxZoom - self.options.minZoom + 1)) mbtiles.stopWriting(function (err) {if (err) throw err;});
+            }
         mbtiles.startWriting(function (err) {
             if (err) throw err;
-            var mapPool = self.project.createMapPool();
-            for (var i = self.options.minZoom; i <= self.options.maxZoom; i++) {
-                self.processZoom(i, bounds, mapPool, mbtiles, self.project, commit);
-            }
+            mbtiles.putInfo(metadata, function (err) {
+                if (err) throw err;
+                var mapPool = self.project.createMapPool();
+                for (var i = self.options.minZoom; i <= self.options.maxZoom; i++) {
+                    self.processZoom(i, bounds, mapPool, mbtiles, self.project, commit);
+                }
+                // Should we drain mapPool even if we are in a script?
+            });
         });
-        // Should we drain mapPool even if we are in a script?
     });
 };
 
