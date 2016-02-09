@@ -1,6 +1,6 @@
 {
   "name": "kosmtik-mbtiles-export",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Export your Kosmtik project in MBTiles",
   "main": "index.js",
   "scripts": {
@@ -23,6 +23,6 @@
   "homepage": "https://github.com/kosmtik/kosmtik-mbtiles-export",
   "kosmtik": "~0.0.8",
   "dependencies": {
-    "mbtiles": "^0.7.3"
+    "mbtiles": "^0.8.2"
   }
 }
